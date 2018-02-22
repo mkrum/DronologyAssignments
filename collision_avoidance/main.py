@@ -69,7 +69,16 @@ def state_out_work(dronology, vehicles):
         time.sleep(1.0)
 
 def vehicle_navigation(*args):
-    print(args)
+    v_id, vehicles, waypoints = args
+    vehicle = vehicles[v_id]
+    other_vehicles = vehicles
+
+    del other_vehicles[v_id]
+
+    arm_and_takeoff(vehicle)
+    while waypoints:
+        vehicle.simple_goto(LocationGlobalRelative(waypoints[0], waypoints[1], waypoints[2]))
+    
 
 def main(path_to_config, ardupath=None):
     if ardupath is not None:
