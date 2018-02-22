@@ -22,7 +22,7 @@ _LOG.addHandler(fh)
 DO_CONT = False
 
 # make sure you change this so that it's correct for your system 
-ARDUPATH = os.path.join('/', 'home', 'bayley', 'git', 'ardupilot')
+ARDUPATH = os.path.join('/', 'home', 'mkrum', 'git', 'ardupilot')
 
 
 def load_json(path2file):
@@ -68,6 +68,8 @@ def state_out_work(dronology, vehicles):
 
         time.sleep(1.0)
 
+def vehicle_navigation(*args):
+    print(args)
 
 def main(path_to_config, ardupath=None):
     if ardupath is not None:
@@ -103,6 +105,10 @@ def main(path_to_config, ardupath=None):
     def stop(*args):
         global DO_CONT
         DO_CONT = False
+
+        for v in v_threads:
+            v.join()
+
         w0.join()
 
         for v, sitl in zip(vehicles, sitls):
@@ -137,9 +143,14 @@ def main(path_to_config, ardupath=None):
     #   2. Sends the drones to their waypoints
     #   3. Hopefully avoids collisions!
 
-
+    
     # You're encouraged to restructure this code as necessary to fit your own design.
     # Hopefully it's flexible enough to support whatever ideas you have in mind.
+    
+    v_threads = []
+    for v in range(len(vehicles)):
+        v_threads.append(threading.Thread(target=vehicle_navigation, args=(v, vehicles, routes[v])))
+        v_threads[-1].start()
 
 
     # wait until ctrl c to exit
