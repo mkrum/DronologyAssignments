@@ -9,6 +9,8 @@ import signal
 import util
 import logging
 
+from magnets import force
+
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.INFO)
 
@@ -53,10 +55,8 @@ def connect_vehicle(instance, home):
 
     return vehicle, sitl
 
-
 def get_vehicle_id(i):
     return 'drone{}'.format(i)
-
 
 def state_out_work(dronology, vehicles):
     while DO_CONT:
@@ -68,17 +68,24 @@ def state_out_work(dronology, vehicles):
 
         time.sleep(1.0)
 
+
+class Waypoint(object):
+    def __init__(self, lat, lon, alt):
+        self.lat = lat
+        self.lon = lon
+        self.alt = alt
+
 def vehicle_navigation(*args):
     v_id, vehicles, waypoints = args
     vehicle = vehicles[v_id]
-    other_vehicles = vehicles
+    other_vehicles = [ vehic for ind, vehic in enumerate(vehicles) if ind != v_id ]
+    util.arm_and_takeoff(waypoints[0][2], vehicle)
 
-    del other_vehicles[v_id]
+    while True:
+        new_x, new_y, new_z = force(vehicle, Waypoint(*waypoints[0]), other_vehicles)
+        vehicle.simple_goto(dronekit.LocationGlobalRelative(new_x, new_y, new_z))
+        time.sleep(1.0)
 
-    arm_and_takeoff(vehicle)
-    while waypoints:
-        vehicle.simple_goto(LocationGlobalRelative(waypoints[0], waypoints[1], waypoints[2]))
-    
 
 def main(path_to_config, ardupath=None):
     if ardupath is not None:
@@ -155,7 +162,8 @@ def main(path_to_config, ardupath=None):
     
     # You're encouraged to restructure this code as necessary to fit your own design.
     # Hopefully it's flexible enough to support whatever ideas you have in mind.
-    
+   
+
     v_threads = []
     for v in range(len(vehicles)):
         v_threads.append(threading.Thread(target=vehicle_navigation, args=(v, vehicles, routes[v])))
