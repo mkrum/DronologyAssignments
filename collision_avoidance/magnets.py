@@ -2,6 +2,7 @@
 import numpy as np
 import random
 from math import radians, cos, sin, asin, sqrt
+import copy
 
 
 def distance(loc1, loc2):
@@ -34,20 +35,36 @@ def haversine(loc1, loc2):
 
     return km
 
+def difference(point1, point2, acs):
+    point2_cp = copy.copy(point1)
+
+    if acs(point2_cp) == point1.lat:
+        point2_cp.lat = point2.lat
+    elif acs(point2_cp) == point1.lon:
+        point2_cp.lon = point2.lon
+    elif acs(point2_cp) == point1.alt:
+        point2_cp.alt = point2.alt
+
+    return distance(point1, point2_cp)
+
+
 def gradient_1d(acs, drone, waypoint, other_drones, D, C_a, C_r):
-    G = C_a * (acs(waypoint) - acs(drone))
-    
+    G = C_a * difference(waypoint, drone, acs)
+
+    ''' 
     for d in other_drones:
         dist = distance(d, drone)
-	print( str(distance(d, drone)) + "  " + str(haversine(d, drone)) )
         G += C_r * (acs(d) - acs(drone)) / ((1 - dist) ** 3 * dist)
+    '''
 
     return G
 
 
 def force(drone, waypoint, other_drones, D=1, C_a=1, C_r=5):
     drone = drone.location.global_relative_frame
+
     other_drones = [ od.location.global_relative_frame for od in other_drones ]
+
     G_x = gradient_1d(lambda x: x.lat, 
                       drone, waypoint, other_drones, D, C_a, C_r)
 
