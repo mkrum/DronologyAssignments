@@ -24,7 +24,7 @@ _LOG.addHandler(fh)
 DO_CONT = False
 
 # make sure you change this so that it's correct for your system 
-ARDUPATH = os.path.join('/', 'home', 'mkrum', 'git', 'ardupilot')
+ARDUPATH = os.path.join('/', 'home', 'david', 'git', 'ardupilot')
 
 
 def load_json(path2file):

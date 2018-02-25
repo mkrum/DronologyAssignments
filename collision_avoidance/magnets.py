@@ -5,10 +5,6 @@ from math import radians, cos, sin, asin, sqrt
 
 
 def distance(loc1, loc2):
-    """
-    Calculate the great circle distance between two points 
-    on the earth (specified in decimal degrees)
-    """
 
     x1 = loc1.alt * cos(loc1.lat) * sin(loc1.lon)
     y1 = loc1.alt * sin(loc1.lat)
@@ -20,12 +16,30 @@ def distance(loc1, loc2):
 
     return ( (x1 - x2) **2 + (y1 - y2) **2 + (z1 - z2) ** 2 ) ** .5
 
+def haversine(loc1, loc2):
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees)
+    """
+    # convert decimal degrees to radians 
+    loc1.lon, loc1.lat, loc2.lon, loc2.lat = map(radians, [loc1.lon, loc1.lat, loc2.lon, loc2.lat])
+    # haversine formula 
+    dlon = loc2.lon - loc1.lon 
+    dlat = loc2.lat - loc1.lat 
+    dalt = abs(loc2.alt - loc1.alt)
+
+    a = sin(dlat/2)**2 + cos(loc1.lat) * cos(loc2.lat) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a)) 
+    km = 6371 * c
+
+    return km
 
 def gradient_1d(acs, drone, waypoint, other_drones, D, C_a, C_r):
     G = C_a * (acs(waypoint) - acs(drone))
     
     for d in other_drones:
         dist = distance(d, drone)
+	print( str(distance(d, drone)) + "  " + str(haversine(d, drone)) )
         G += C_r * (acs(d) - acs(drone)) / ((1 - dist) ** 3 * dist)
 
     return G
