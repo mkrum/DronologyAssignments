@@ -69,8 +69,9 @@ def gradient_1d(acs, drone, waypoint, other_drones, D, C_a, C_r):
     
     
     for d in other_drones:
-        dist = difference(d, drone, acs)
-        G += C_r * (acs(d) - acs(drone)) / ((5 - dist) ** 3 * dist)
+        dif = difference(d, drone, acs)
+        dist = distance(d, drone)
+        G += C_r * dif / ((5 - dist) ** 3 * dist)
    
     
     return G
