@@ -67,16 +67,16 @@ def difference(point1, point2, acs):
 def gradient_1d(acs, drone, waypoint, other_drones, D, C_a, C_r):
     G = C_a * difference(waypoint, drone, acs)
     
-    '''
+    
     for d in other_drones:
-        dist = distance_v2(d, drone)
-        G += C_r * (acs(d) - acs(drone)) / ((1 - dist) ** 3 * dist)
-    '''
+        dist = difference(d, drone, acs)
+        G += C_r * (acs(d) - acs(drone)) / ((5 - dist) ** 3 * dist)
+   
     
     return G
 
 
-def force(drone, waypoint, other_drones, D=1, C_a=1, C_r=25):
+def force(drone, waypoint, other_drones, D=1, C_a=1, C_r=5):
     drone = drone.location.global_relative_frame
 
     other_drones = [ od.location.global_relative_frame for od in other_drones ]
