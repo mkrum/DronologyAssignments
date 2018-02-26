@@ -24,7 +24,7 @@ _LOG.addHandler(fh)
 DO_CONT = False
 
 # make sure you change this so that it's correct for your system 
-ARDUPATH = os.path.join('/', 'home', 'david', 'git', 'ardupilot')
+ARDUPATH = os.path.join('/', 'home', 'mkrum', 'git', 'ardupilot')
 
 
 def load_json(path2file):
@@ -79,28 +79,36 @@ def vehicle_navigation(*args):
     v_id, vehicles, waypoints = args
     vehicle = vehicles[v_id]
     other_vehicles = [ vehic for ind, vehic in enumerate(vehicles) if ind != v_id ]
-    util.arm_and_takeoff(waypoints[0][2], vehicle)
+    waypoints = [ Waypoint(*w) for w in waypoints ]
+    util.arm_and_takeoff(waypoints[0].alt, vehicle)
 
-    index = 0
-    while True:
-	check_collisions(vehicles, 5)
-	if index >= len(waypoints):
-	    print("Drone" + str(v_id) + " Reached Final Waypoint")
-	    vehicle.simple_goto(dronekit.LocationGlobalRelative(vehicle.location.global_relative_frame.lat, vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt))
-	    return
-	gotopoint = Waypoint(*waypoints[index])
-	if distance_v2(vehicle.location.global_relative_frame, gotopoint) <= 5:
-		print("Drone" + str(v_id) + " arrived at waypoint " + str(index) + ". " + str(vehicle.location.global_relative_frame.lat) + "," + str(vehicle.location.global_relative_frame.lon) + "," + str(vehicle.location.global_relative_frame.alt) )
-		index+=1
-	#vehicle.simple_goto(dronekit.LocationGlobalRelative(gotopoint.lat, gotopoint.lon, gotopoint.alt))
-        new_x, new_y, new_z = force(vehicle, gotopoint, other_vehicles)
+    while waypoints:
+        location = vehicle.location.global_relative_frame
+	check_collisions(vehicles, 1)
+        
+        new_x, new_y, new_z = force(vehicle, waypoints[0], other_vehicles)
         vehicle.simple_goto(dronekit.LocationGlobalRelative(new_x, new_y, new_z))
         time.sleep(1.0)
+        location = vehicle.location.global_relative_frame
+        
+	if distance_v2(location, waypoints[0]) <= 5:
+            print('Drone {} arrived at waypoint'.format(v_id))
+            waypoints.pop(0)
+
+    print("Drone" + str(v_id) + " Reached Final Waypoint")
+
+    #stop
+    vehicle.simple_goto(dronekit.LocationGlobalRelative(location.lat, 
+                                                        location.lon, 
+                                                        location.alt),
+                        groundspeed=20)
+    exit()
 
 def check_collisions(vehicles, dist=1):
     col = 0
     for ind, vehic in enumerate(vehicles):
 	for other_ind, other_vehic in enumerate(vehicles):
+
 	    if ind != other_ind:
 		col_dist = distance_v2(vehic.location.global_relative_frame, other_vehic.location.global_relative_frame)
 	        if( col_dist <= dist ):

@@ -17,8 +17,8 @@ def distance(loc1, loc2):
 
     return ( (x1 - x2) **2 + (y1 - y2) **2 + (z1 - z2) ** 2 ) ** .5
 
-def distance_v2(loc1, loc2):
-    lat1 = radians(loc1.lat)
+def distance_v2(loc1, loc2): 
+    lat1 = radians(loc1.lat) 
     lon1 = radians(loc1.lon)
     alt1 = loc1.alt
  
@@ -70,14 +70,15 @@ def gradient_1d(acs, drone, waypoint, other_drones, D, C_a, C_r):
     
     for d in other_drones:
         dif = difference(d, drone, acs)
-        dist = distance(d, drone)
-        G += C_r * dif / ((5 - dist) ** 3 * dist)
+        dist = max(distance_v2(d, drone), 5.000001)
+        
+        G += C_r * dif / ((5.0 - dist) ** 3 * dist)
    
     
     return G
 
 
-def force(drone, waypoint, other_drones, D=1, C_a=1, C_r=5):
+def force(drone, waypoint, other_drones, D=.5, C_a=2, C_r=5):
     drone = drone.location.global_relative_frame
 
     other_drones = [ od.location.global_relative_frame for od in other_drones ]
