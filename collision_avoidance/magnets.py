@@ -40,26 +40,24 @@ def difference(point1, point2, acs):
 
     if acs(point2_cp) == point1.lat:
         point2_cp.lat = point2.lat
-        dif = int(point1.lat > point1.lat)
+        dif = int(point1.lat > point2.lat)
     elif acs(point2_cp) == point1.lon:
         point2_cp.lon = point2.lon
-        dif = int(point1.lon > point1.lon)
+        dif = int(point1.lon > point2.lon)
     elif acs(point2_cp) == point1.alt:
         point2_cp.alt = point2.alt
-        dif = int(point1.alt > point1.alt)
+        dif = int(point1.alt > point2.alt)
 
-    return dif * distance(point1, point2_cp)
+    return dif * distance(point1, point2_cp) + -1 * (1 - dif) * distance(point1, point2_cp)
 
 
 def gradient_1d(acs, drone, waypoint, other_drones, D, C_a, C_r):
     G = C_a * difference(waypoint, drone, acs)
-
-    ''' 
+    '''
     for d in other_drones:
         dist = distance(d, drone)
         G += C_r * (acs(d) - acs(drone)) / ((1 - dist) ** 3 * dist)
     '''
-
     return G
 
 
@@ -77,10 +75,11 @@ def force(drone, waypoint, other_drones, D=1, C_a=1, C_r=5):
     G_z = gradient_1d(lambda x: x.alt, 
                       drone, waypoint, other_drones, D, C_a, C_r)
     
-    denom =  (G_x ** 2 + G_y ** 2 + G_z ** 2) ** .5 + .0001
+    denom =  (G_x ** 2 + G_y ** 2 + G_z ** 2) ** .5
     G_x = D * G_x / denom
     G_y = D * G_y / denom 
     G_z = D * G_z / denom 
 
-    return drone.lat, drone.lon, drone.alt + G_z
+    #print(str((G_x)) + " " +  str((G_y)) + " " + str(G_z))
+    return drone.lat + (G_x), drone.lon + (G_y), drone.alt + G_z
 

@@ -9,7 +9,7 @@ import signal
 import util
 import logging
 
-from magnets import force
+from magnets import force, distance
 
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.INFO)
@@ -81,8 +81,18 @@ def vehicle_navigation(*args):
     other_vehicles = [ vehic for ind, vehic in enumerate(vehicles) if ind != v_id ]
     util.arm_and_takeoff(waypoints[0][2], vehicle)
 
+    index = 0
     while True:
-        new_x, new_y, new_z = force(vehicle, Waypoint(*waypoints[0]), other_vehicles)
+	if index >= len(waypoints):
+	    print("Reached Final Waypoint")
+	    vehicle.simple_goto(dronekit.LocationGlobalRelative(vehicle.location.global_relative_frame.lat, vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt))
+	    return
+	gotopoint = Waypoint(*waypoints[index])
+	if distance(vehicle.location.global_relative_frame, gotopoint) < 0.25:
+		print("Arrived at waypoint " + str(index) + ". " + str(vehicle.location.global_relative_frame.lat) + "," + str(vehicle.location.global_relative_frame.lon) + "," + str(vehicle.location.global_relative_frame.alt) )
+		index+=1
+	#vehicle.simple_goto(dronekit.LocationGlobalRelative(gotopoint.lat, gotopoint.lon, gotopoint.alt))
+        new_x, new_y, new_z = force(vehicle, gotopoint, other_vehicles)
         vehicle.simple_goto(dronekit.LocationGlobalRelative(new_x, new_y, new_z))
         time.sleep(1.0)
 
