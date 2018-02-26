@@ -9,7 +9,7 @@ import signal
 import util
 import logging
 
-from magnets import force, distance
+from magnets import force, distance, distance_v2
 
 _LOG = logging.getLogger(__name__)
 _LOG.setLevel(logging.INFO)
@@ -83,18 +83,31 @@ def vehicle_navigation(*args):
 
     index = 0
     while True:
+	check_collisions(vehicles, 15)
 	if index >= len(waypoints):
 	    print("Reached Final Waypoint")
 	    vehicle.simple_goto(dronekit.LocationGlobalRelative(vehicle.location.global_relative_frame.lat, vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt))
 	    return
 	gotopoint = Waypoint(*waypoints[index])
-	if distance(vehicle.location.global_relative_frame, gotopoint) < 0.25:
+	if distance_v2(vehicle.location.global_relative_frame, gotopoint) <= 3:
 		print("Arrived at waypoint " + str(index) + ". " + str(vehicle.location.global_relative_frame.lat) + "," + str(vehicle.location.global_relative_frame.lon) + "," + str(vehicle.location.global_relative_frame.alt) )
 		index+=1
 	#vehicle.simple_goto(dronekit.LocationGlobalRelative(gotopoint.lat, gotopoint.lon, gotopoint.alt))
         new_x, new_y, new_z = force(vehicle, gotopoint, other_vehicles)
         vehicle.simple_goto(dronekit.LocationGlobalRelative(new_x, new_y, new_z))
         time.sleep(1.0)
+
+def check_collisions(vehicles, dist=1):
+    col = 0
+    for ind, vehic in enumerate(vehicles):
+	for other_ind, other_vehic in enumerate(vehicles):
+	    if ind != other_ind:
+		col_dist = distance_v2(vehic.location.global_relative_frame, other_vehic.location.global_relative_frame)
+	        if( col_dist <= dist ):
+		    print("Collision between " + str(ind) + " and " + str(other_ind) + " at "  + str(col_dist))
+		    col+=1
+
+    return col/2
 
 
 def main(path_to_config, ardupath=None):

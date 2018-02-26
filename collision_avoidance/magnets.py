@@ -17,23 +17,36 @@ def distance(loc1, loc2):
 
     return ( (x1 - x2) **2 + (y1 - y2) **2 + (z1 - z2) ** 2 ) ** .5
 
-def haversine(loc1, loc2):
-    """
-    Calculate the great circle distance between two points 
-    on the earth (specified in decimal degrees)
-    """
-    # convert decimal degrees to radians 
-    loc1.lon, loc1.lat, loc2.lon, loc2.lat = map(radians, [loc1.lon, loc1.lat, loc2.lon, loc2.lat])
-    # haversine formula 
-    dlon = loc2.lon - loc1.lon 
-    dlat = loc2.lat - loc1.lat 
-    dalt = abs(loc2.alt - loc1.alt)
+def distance_v2(loc1, loc2):
+    lat1 = radians(loc1.lat)
+    lon1 = radians(loc1.lon)
+    alt1 = loc1.alt
+ 
+    lat2 = radians(loc2.lat)
+    lon2 = radians(loc2.lon)
+    alt2 = loc2.alt
+ 
+    a = 6378137.0 # equatorial radius of the Earth in meters
+    b = 6356752.3 # polar radius of the Earth in meters
+ 
+    N1 =  (a**2)/sqrt((a**2 * (cos(lat1)**2)) + (b**2 * (sin(lat1)**2)))
+    N2 =  (a**2)/sqrt((a**2 * (cos(lat2)**2)) + (b**2 * (sin(lat2)**2)))
+ 
+    # convert geodetic coordinates to Cartesian coordinates
+    x1 = (N1 + alt1)*cos(lat1)*cos(lon1)
+    y1 = (N1 + alt1)*cos(lat1)*sin(lon1)
+    z1 = (((b**2)/(a**2))*N1 + alt1)*sin(lat1)
+ 
+    x2 = (N2 + alt2)*cos(lat2)*cos(lon2)
+    y2 = (N2 + alt2)*cos(lat2)*sin(lon2)
+    z2 = (((b**2)/(a**2))*N2 + alt2)*sin(lat2)
 
-    a = sin(dlat/2)**2 + cos(loc1.lat) * cos(loc2.lat) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a)) 
-    km = 6371 * c
+    # calculate distance between the two points
+    distance_in_meters = sqrt((x2-x1)**2 + (y2-y1)**2 + (z2-z1)**2)
 
-    return km
+    #print(distance_in_meters)
+ 
+    return distance_in_meters
 
 def difference(point1, point2, acs):
     point2_cp = copy.copy(point1)
@@ -48,20 +61,22 @@ def difference(point1, point2, acs):
         point2_cp.alt = point2.alt
         dif = int(point1.alt > point2.alt)
 
-    return dif * distance(point1, point2_cp) + -1 * (1 - dif) * distance(point1, point2_cp)
+    return dif * distance_v2(point1, point2_cp) + -1 * (1 - dif) * distance_v2(point1, point2_cp)
 
 
 def gradient_1d(acs, drone, waypoint, other_drones, D, C_a, C_r):
     G = C_a * difference(waypoint, drone, acs)
+    
     '''
     for d in other_drones:
-        dist = distance(d, drone)
+        dist = distance_v2(d, drone)
         G += C_r * (acs(d) - acs(drone)) / ((1 - dist) ** 3 * dist)
     '''
+    
     return G
 
 
-def force(drone, waypoint, other_drones, D=1, C_a=1, C_r=5):
+def force(drone, waypoint, other_drones, D=1, C_a=1, C_r=25):
     drone = drone.location.global_relative_frame
 
     other_drones = [ od.location.global_relative_frame for od in other_drones ]
